@@ -6,15 +6,17 @@
 
 **Language:** [English](README.md) | [中文](README_zh.md)
 
-## Project Overview
+---
 
-This repository contains USD (Universal Scene Description) digital assets for Agilebot Robotics' robot products, primarily targeting the **NVIDIA Isaac Sim and Isaac Lab** ecosystems for robot modeling, physics simulation, algorithm validation, and application development.
+## 📖 Project Overview
+
+This repository contains **USD (Universal Scene Description)** digital assets for Agilebot Robotics' robot products, primarily targeting the **NVIDIA Isaac Sim and Isaac Lab** ecosystems for robot modeling, physics simulation, algorithm validation, and application development.
 
 USD is an open standard for complex 3D scenes, supporting efficient hierarchical organization, composition, variants, physics, and semantic extensions. Through USD format, these robot models can be directly used in Isaac Sim, Isaac Lab, and Omniverse-related toolchains, with flexible component configuration and extension capabilities.
 
 ---
 
-## Directory Structure
+## 📁 Directory Structure
 
 ```
 agilebot_usd_assets/
@@ -41,7 +43,7 @@ agilebot_usd_assets/
 
 ---
 
-## Robot Models
+## 🤖 Robot Models
 
 ### GBT-C5A Collaborative Robot
 
@@ -68,7 +70,7 @@ agilebot_usd_assets/
 
 ---
 
-## Gripper Configuration and Variant Switching
+## 🔧 Gripper Configuration and Variant Switching
 
 Each robot model provides **Robotiq 2F-140 gripper variant**, integrated as a USD VariantSet, allowing dynamic switching without modifying the USD structure.
 
@@ -101,7 +103,7 @@ This method is suitable for:
 
 ---
 
-## Gripper Model Source
+## 📦 Gripper Model Source
 
 The gripper model is sourced from the open-source project:
 [robotiq_2f_gripper](https://github.com/gen-robot/robotiq_2f_gripper/tree/main/robotiq_2f_140_gripper_visualization)
@@ -113,7 +115,7 @@ Gripper import and assembly process refers to NVIDIA official documentation:
 
 ---
 
-## Usage
+## 🚀 Usage
 
 ### Using in Isaac Sim
 
@@ -125,7 +127,7 @@ The current version can be used as input for `Articulation` or custom assets in 
 
 ---
 
-## Physics Parameters Notice
+## ⚠️ Physics Parameters Notice
 
 **Important Note on Physics Parameters:**
 
@@ -135,7 +137,7 @@ Please manually adjust these parameters according to your specific simulation re
 
 ---
 
-## Contribution Guidelines
+## 🤝 Contribution Guidelines
 
 Contributions are welcome via Issues and Pull Requests.
 
@@ -149,13 +151,13 @@ Contributions are welcome via Issues and Pull Requests.
 
 ---
 
-## License
+## 📄 License
 
 This project is licensed under the **BSD 3-Clause License**, see [LICENSE](LICENSE) for details.
 
 ---
 
-## Contact
+## 📞 Contact
 
 * **Business Inquiry**: [info@agilebot.com.cn](mailto:info@agilebot.com.cn)
 * **Technical Support**: 400-996-7588
@@ -163,7 +165,7 @@ This project is licensed under the **BSD 3-Clause License**, see [LICENSE](LICEN
 
 ---
 
-## Acknowledgments
+## 🙏 Acknowledgments
 
 Thanks to the [NVIDIA Isaac Sim](https://developer.nvidia.com/isaac-sim) and [Isaac Lab](https://isaac-sim.github.io/IsaacLab/) teams for providing excellent robot simulation platforms.
 
@@ -171,13 +173,13 @@ Special thanks to [Robotiq](https://robotiq.com/) for their open-source gripper 
 
 ---
 
-## Changelog
+## 📋 Changelog
 
 For detailed version history and changes, please refer to [CHANGELOG.md](CHANGELOG.md).
 
 ---
 
-## Roadmap
+## 🗺️ Roadmap
 
 Future development plans include:
 
@@ -197,7 +199,7 @@ Future development plans include:
 
 ---
 
-## About Agilebot Robotics
+## 🏢 About Agilebot Robotics
 
 Shanghai Agilebot Robotics Co., Ltd. is a professional provider of industrial robots and intelligent magnetic drive conveyor systems. With the vision of "Driving Future Factories", the company provides high-performance, high-quality, cost-effective, and easy-to-use robot products based on advanced integrated drive and control technology.
 
@@ -210,5 +212,3 @@ The product line covers collaborative robots, industrial six-axis robots, and SC
 ---
 
 © 2026 Agilebot Robotics. All rights reserved.
-
----

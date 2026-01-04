@@ -6,15 +6,17 @@
 
 **语言 / Language:** [English](README.md) | [中文](README_zh.md)
 
-## 项目简介
+---
 
-本仓库包含 Agilebot Robotics 机器人产品的 USD（Universal Scene Description）数字资产，主要面向 **NVIDIA Isaac Sim 与 Isaac Lab** 生态，用于机器人建模、物理仿真、算法验证与应用开发。
+## 📖 项目简介
+
+本仓库包含 Agilebot Robotics 机器人产品的 **USD（Universal Scene Description）** 数字资产，主要面向 **NVIDIA Isaac Sim 与 Isaac Lab** 生态，用于机器人建模、物理仿真、算法验证与应用开发。
 
 USD 是一种面向复杂三维场景的开放标准，支持高效的层级组织、组合（Composition）、变体（Variant）、物理与语义扩展。通过 USD 格式，这些机器人模型可在 Isaac Sim、Isaac Lab 及 Omniverse 相关工具链中直接使用，并支持灵活的组件配置与扩展。
 
 ---
 
-## 目录结构
+## 📁 目录结构
 
 ```
 agilebot_usd_assets/
@@ -41,7 +43,7 @@ agilebot_usd_assets/
 
 ---
 
-## 机器人型号
+## 🤖 机器人型号
 
 ### GBT-C5A 协作机器人
 
@@ -68,7 +70,7 @@ agilebot_usd_assets/
 
 ---
 
-## 夹爪配置与 Variant 切换
+## 🔧 夹爪配置与 Variant 切换
 
 每个机器人型号均提供 **Robotiq 2F-140 夹爪变体**，夹爪以 **USD VariantSet** 的形式集成在机器人模型中，可在不修改 USD 结构的情况下动态切换。
 
@@ -101,7 +103,7 @@ robot.GetVariantSet("Gripper").SetVariantSelection("None")
 
 ---
 
-## 夹爪模型来源说明
+## 📦 夹爪模型来源说明
 
 夹爪模型来源于开源项目：
 [robotiq_2f_gripper](https://github.com/gen-robot/robotiq_2f_gripper/tree/main/robotiq_2f_140_gripper_visualization)
@@ -113,7 +115,7 @@ robot.GetVariantSet("Gripper").SetVariantSelection("None")
 
 ---
 
-## 使用方法
+## 🚀 使用方法
 
 ### 在 Isaac Sim 中使用
 
@@ -127,7 +129,7 @@ Isaac Sim 的完整示例工程将在后续版本中提供。
 
 ---
 
-## 物理参数说明
+## ⚠️ 物理参数说明
 
 **重要提示：**
 
@@ -137,7 +139,7 @@ Isaac Sim 的完整示例工程将在后续版本中提供。
 
 ---
 
-## 贡献指南
+## 🤝 贡献指南
 
 欢迎通过 Issue 与 Pull Request 参与本仓库的维护与改进。
 
@@ -151,13 +153,13 @@ Isaac Sim 的完整示例工程将在后续版本中提供。
 
 ---
 
-## 许可证
+## 📄 许可证
 
 本项目采用 **BSD 3-Clause License**，详见 [LICENSE](LICENSE)。
 
 ---
 
-## 联系方式
+## 📞 联系方式
 
 * **商务咨询**：[info@agilebot.com.cn](mailto:info@agilebot.com.cn)
 * **技术支持**：400-996-7588
@@ -165,7 +167,7 @@ Isaac Sim 的完整示例工程将在后续版本中提供。
 
 ---
 
-## 致谢
+## 🙏 致谢
 
 感谢 [NVIDIA Isaac Sim](https://developer.nvidia.com/isaac-sim) 和 [Isaac Lab](https://isaac-sim.github.io/IsaacLab/) 团队提供的优秀机器人仿真平台。
 
@@ -173,13 +175,13 @@ Isaac Sim 的完整示例工程将在后续版本中提供。
 
 ---
 
-## 更新日志
+## 📋 更新日志
 
 详细的版本历史和变更记录，请参考 [CHANGELOG_zh.md](CHANGELOG_zh.md)。
 
 ---
 
-## 后续计划
+## 🗺️ 后续计划
 
 未来的开发计划包括：
 
@@ -199,9 +201,9 @@ Isaac Sim 的完整示例工程将在后续版本中提供。
 
 ---
 
-## 关于 Agilebot Robotics
+## 🏢 关于 Agilebot Robotics
 
-上海捷勃特机器人有限公司是一家专业的工业机器人和智能磁驱输送系统提供商。公司以“驱动未来工厂”为愿景，依托先进的驱控一体控制技术，为客户提供高性能、高品质、高性价比、高易用性的机器人产品。
+上海捷勃特机器人有限公司是一家专业的工业机器人和智能磁驱输送系统提供商。公司以"驱动未来工厂"为愿景，依托先进的驱控一体控制技术，为客户提供高性能、高品质、高性价比、高易用性的机器人产品。
 
 产品线涵盖协作机器人、工业六轴机器人与 SCARA 机器人，广泛应用于装配、搬运、检测等工业场景。
 
@@ -212,5 +214,3 @@ Isaac Sim 的完整示例工程将在后续版本中提供。
 ---
 
 © 2026 Agilebot Robotics. All rights reserved.
-
----
