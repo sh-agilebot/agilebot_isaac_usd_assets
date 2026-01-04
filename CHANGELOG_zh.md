@@ -5,7 +5,7 @@
 格式基于 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/)，
 本项目遵循 [语义化版本](https://semver.org/lang/zh-CN/spec/v2.0.0.html)。
 
-## [1.0.0] - 2026-01-04
+## [0.0.1] - 2026-01-04
 
 ### 新增
 - Agilebot Robotics USD 资产库首次发布
@@ -39,8 +39,8 @@
 ## [未发布]
 
 ### 计划中
-- 添加工业六轴机器人（GBT-S6A、GBT-S10A、GBT-S20A、GBT-S50A）
-- 添加 SCARA 机器人（GBT-SCARA400、GBT-SCARA600、GBT-SCARA800）
+- 添加工业 SCARA 机器人（GBT-S3A、GBT-S6A、GBT-S10A、GBT-S20A）
+- 添加工业 PUMA 机器人（GBT-P7A）
 - 为 GBT-C7A 提供默认物理参数
 - 为 GBT-C12A 提供默认物理参数
 - 为 GBT-C16A 提供默认物理参数

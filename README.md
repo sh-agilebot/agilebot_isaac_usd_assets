@@ -184,13 +184,11 @@ For detailed version history and changes, please refer to [CHANGELOG.md](CHANGEL
 Future development plans include:
 
 ### Industrial Robot Models
-- [ ] GBT-S6A - 6 kg payload industrial six-axis robot
-- [ ] GBT-S10A - 10 kg payload industrial six-axis robot
-- [ ] GBT-S20A - 20 kg payload industrial six-axis robot
-- [ ] GBT-S50A - 50 kg payload industrial six-axis robot
-- [ ] GBT-SCARA400 - SCARA robot with 400 mm reach
-- [ ] GBT-SCARA600 - SCARA robot with 600 mm reach
-- [ ] GBT-SCARA800 - SCARA robot with 800 mm reach
+- [ ] GBT-S3A - 3 kg payload industrial SCARA robot
+- [ ] GBT-S6A - 6 kg payload industrial SCARA robot
+- [ ] GBT-S10A - 10 kg payload industrial SCARA robot
+- [ ] GBT-S20A - 20 kg payload industrial SCARA robot
+- [ ] GBT-P7A - 7 kg payload industrial PUMA robot
 
 ### Physics Parameters
 - [ ] Provide default physics parameters for GBT-C7A

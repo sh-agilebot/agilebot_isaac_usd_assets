@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.0.0] - 2026-01-04
+## [0.0.1] - 2026-01-04
 
 ### Added
 - Initial release of Agilebot Robotics USD Assets
@@ -39,8 +39,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Planned
-- Add industrial six-axis robots (GBT-S6A, GBT-S10A, GBT-S20A, GBT-S50A)
-- Add SCARA robots (GBT-SCARA400, GBT-SCARA600, GBT-SCARA800)
+- Add industrial SCARA robots (GBT-S3A, GBT-S6A, GBT-S10A, GBT-S20A)
+- Add industrial PUMA robot (GBT-P7A)
 - Provide default physics parameters for GBT-C7A
 - Provide default physics parameters for GBT-C12A
 - Provide default physics parameters for GBT-C16A

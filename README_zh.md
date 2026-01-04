@@ -186,13 +186,12 @@ Isaac Sim 的完整示例工程将在后续版本中提供。
 未来的开发计划包括：
 
 ### 工业机器人机型
-- [ ] GBT-S6A - 6kg 负载工业六轴机器人
-- [ ] GBT-S10A - 10kg 负载工业六轴机器人
-- [ ] GBT-S20A - 20kg 负载工业六轴机器人
-- [ ] GBT-S50A - 50kg 负载工业六轴机器人
-- [ ] GBT-SCARA400 - 400mm 臂展 SCARA 机器人
-- [ ] GBT-SCARA600 - 600mm 臂展 SCARA 机器人
-- [ ] GBT-SCARA800 - 800mm 臂展 SCARA 机器人
+- [ ] GBT-S3A - 3kg 负载工业 SCARA 机器人
+- [ ] GBT-S6A - 6kg 负载工业 SCARA 机器人
+- [ ] GBT-S10A - 10kg 负载工业 SCARA 机器人
+- [ ] GBT-S20A - 20kg 负载工业 SCARA 机器人
+- [ ] GBT-P7A - 7kg 负载工业 PUMA 机器人
+
 
 ### 物理参数
 - [ ] 为 GBT-C7A 提供默认物理参数
