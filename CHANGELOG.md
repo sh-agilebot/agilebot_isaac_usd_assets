@@ -36,6 +36,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.0.2] - 2026-01-05
+
+### Added
+- Added GBT-C5A robot + Robotiq gripper + Orbbec Femto Mega camera integrated model
+- Added comprehensive documentation for integrated model including usage guide and technical specifications
+- Added third-party licenses documentation (THIRD_PARTY_LICENSES.md)
+
+### Optimized
+- Updated all robot models' joint natural frequency and damping parameters to Isaac Sim official recommended empirical values (active joints: 300, linked joints: 2500, damping: 0.005)
+- Updated physics parameters documentation to clarify mass and directional inertia sources (GBT-C5A: manually calculated by Agilebot, other models: automatically generated)
+
+### Documentation
+- Enhanced README with detailed integrated model information
+- Added integrated model README with component specifications, usage guide, and Python API examples
+- Added third-party licenses documentation with complete license information for all third-party components
+- Updated physics parameters notice to reflect accurate configuration across all robot models
+
+### Fixed
+- Fixed formatting issues in CHANGELOG (removed line breaks in Optimized section)
+
+---
+
 ## [Unreleased]
 
 ### Planned

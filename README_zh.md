@@ -30,6 +30,8 @@ agilebot_usd_assets/
 │   │   ├── gbt-c5a_robot.usd   # 机器人主体定义
 │   │   └── gbt-c5a_sensor.usd  # 传感器配置
 │   └── gbt-c5a.usd             # 主入口 USD 文件
+├── gbt-c5a_camera_gripper/     # GBT-C5A 机器人+相机+夹爪集成模型
+│   └── gbt-c5a_camera_gripper.usd # 主入口 USD 文件
 ├── gbt-c7a/                    # GBT-C7A 协作机器人模型
 │   └── (结构与 gbt-c5a 相同)
 ├── gbt-c12a/                   # GBT-C12A 协作机器人模型
@@ -52,6 +54,13 @@ agilebot_usd_assets/
 - **特点**：高配置、高性能、高性价比的首款协作机器人  
 - **适用场景**：装配、涂胶、检测等协作应用  
 
+### GBT-C5A 机器人+相机+夹爪集成模型
+
+- **组成**：GBT-C5A 机器人 + Robotiq 2F-140 夹爪 + 奥比中光 Femto Mega 相机  
+- **相机支架**：适配自 [MetaIsaacGrasp](https://github.com/YitianShi/MetaIsaacGrasp)（MIT 许可证）  
+- **特点**：预配置的集成解决方案，适用于视觉引导机器人应用  
+- **适用场景**：抓取、装配、检测等视觉辅助任务  
+
 ### GBT-C7A 协作机器人
 
 - **额定负载**：7 kg  
@@ -60,7 +69,7 @@ agilebot_usd_assets/
 ### GBT-C12A 协作机器人
 
 - **额定负载**：12 kg  
-- **特点**：高负载协作机器人，荣获 2024 年度中国机器人行业创新奖项  
+- **特点**：高负载协作机器人，适用于多种工业应用 
 - **适用场景**：重载装配、搬运等应用  
 
 ### GBT-C16A 协作机器人
@@ -133,7 +142,16 @@ Isaac Sim 的完整示例工程将在后续版本中提供。
 
 **重要提示：**
 
-除 GBT-C5A 外，所有机器人型号的物理参数（关节阻尼、刚度、质量、方向惯量）均由 SolidWorks 或 Isaac Sim 自动生成。仅 GBT-C5A 的物理参数来自捷勃特公司内部计算。
+所有机器人型号的关节自然频率和阻尼参数均已配置为 Isaac Sim 推荐的经验值：
+
+- **活动关节**：自然频率 = 300，阻尼 = 0.005
+- **联动关节**：自然频率 = 2500，阻尼 = 0.005
+
+这些值基于 Isaac Sim 官方推荐，并已通过测试可减少机器人仿真时出现的乱飞、晃动等问题。
+
+关于质量和方向惯量：
+- **GBT-C5A**：由捷勃特公司手动计算
+- **其他机型（GBT-C7A、GBT-C12A、GBT-C16A）**：由 SolidWorks 或 Isaac Sim 自动生成
 
 请根据具体的仿真任务需求手动调整上述参数，以确保仿真行为的准确性。
 
@@ -172,6 +190,12 @@ Isaac Sim 的完整示例工程将在后续版本中提供。
 感谢 [NVIDIA Isaac Sim](https://developer.nvidia.com/isaac-sim) 和 [Isaac Lab](https://isaac-sim.github.io/IsaacLab/) 团队提供的优秀机器人仿真平台。
 
 特别感谢 [Robotiq](https://robotiq.com/) 提供的开源夹爪模型，为我们的机器人资产增添了更多灵活性和实用性。
+
+感谢 [奥比中光](https://www.orbbec3d.com/) 提供的 Femto Mega 相机，为视觉引导机器人应用提供了支持。
+
+感谢 [MetaIsaacGrasp](https://github.com/YitianShi/MetaIsaacGrasp) 提供的相机支架设计，该设计基于 MIT 许可证使用。
+
+有关第三方许可证的详细信息，请参考 [THIRD_PARTY_LICENSES.md](THIRD_PARTY_LICENSES.md)。
 
 ---
 
