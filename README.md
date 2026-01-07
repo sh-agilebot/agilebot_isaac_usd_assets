@@ -112,7 +112,7 @@ This method is suitable for:
 
 ---
 
-## � Tips
+## 💡 Tips
 
 ### Gripper Grasping Issues
 
@@ -128,7 +128,7 @@ These adjustments help prevent the gripper from applying excessive force that ca
 
 ---
 
-## �📦 Gripper Model Source
+## 📦 Gripper Model Source
 
 The gripper model is sourced from the open-source project:
 [robotiq_2f_gripper](https://github.com/gen-robot/robotiq_2f_gripper/tree/main/robotiq_2f_140_gripper_visualization)
@@ -140,7 +140,7 @@ Gripper import and assembly process refers to NVIDIA official documentation:
 
 ---
 
-## �️ Experimental Environment
+## 🖥️ Experimental Environment
 
 **Test Environment:**
 
@@ -151,7 +151,7 @@ Gripper import and assembly process refers to NVIDIA official documentation:
 
 ---
 
-## �🚀 Usage
+## 🚀 Usage
 
 ### Using in Isaac Sim
 
