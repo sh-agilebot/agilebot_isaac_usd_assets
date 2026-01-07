@@ -6,6 +6,8 @@
 
 **Language:** [English](README.md) | [中文](README_zh.md)
 
+![Agilebot Robots in Isaac Sim](docs/images/agilebot_robots_simulation.png)
+
 ---
 
 ## 📖 Project Overview
