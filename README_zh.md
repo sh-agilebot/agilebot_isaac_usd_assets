@@ -10,21 +10,30 @@
 
 ---
 
-## 🔗 相关仓库说明
+## 📖 仓库简介
 
-本项目属于 Agilebot 官方 Isaac 生态的一部分，以下仓库共同组成完整的仿真与学习工作流：
+本仓库是 Agilebot Robotics 官方 Isaac 生态的核心资产仓库，包含全系列协作机器人的 **USD（Universal Scene Description）** 数字资产，主要面向 **NVIDIA Isaac Sim 与 Isaac Lab** 生态，用于机器人建模、物理仿真、算法验证与应用开发。
 
-- **[agilebot_isaac_sim](https://github.com/sh-agilebot/agilebot_isaac_sim)**: Agilebot 机器人在 NVIDIA Isaac Sim 中的集成仓库，包含仿真配置、环境设置及示例 Demo。*不包含任何机器人数字资产。*
-- **[agilebot_isaac_lab](https://github.com/sh-agilebot/agilebot_isaac_lab)**: 基于 NVIDIA Isaac Lab 的训练与学习仓库，包含任务定义、环境配置及训练示例。*不包含任何机器人数字资产。*
-- **[agilebot_isaac_usd_assets](https://github.com/sh-agilebot/agilebot_isaac_usd_assets)**: Agilebot 机器人数字资产仓库，统一维护 USD 模型、网格文件及贴图资源。
+### 核心价值
+
+- **标准化资产**：所有机器人模型均采用 USD 格式，支持跨平台、跨工具的无缝集成
+- **物理优化**：预配置的关节自然频率和阻尼参数，确保仿真稳定性和准确性
+- **变体支持**：内置夹爪变体，可动态切换末端执行器配置
+- **即开即用**：无需额外配置，直接在 Isaac Sim 和 Isaac Lab 中加载使用
+
+USD 是一种面向复杂三维场景的开放标准，支持高效的层级组织、组合（Composition）、变体（Variant）、物理与语义扩展。通过标准化的 USD 格式，您可以快速将这些机器人模型集成到 Isaac Sim、Isaac Lab 及 Omniverse 相关工具链中，并支持灵活的组件配置与扩展。
 
 ---
 
-## 📖 项目简介
+## 🔗 生态系统与相关仓库
 
-本仓库包含 Agilebot Robotics 机器人产品的 **USD（Universal Scene Description）** 数字资产，主要面向 **NVIDIA Isaac Sim 与 Isaac Lab** 生态，用于机器人建模、物理仿真、算法验证与应用开发。
+本仓库与以下仓库共同组成完整的 Agilebot Isaac 仿真与学习工作流：
 
-USD 是一种面向复杂三维场景的开放标准，支持高效的层级组织、组合（Composition）、变体（Variant）、物理与语义扩展。通过 USD 格式，这些机器人模型可在 Isaac Sim、Isaac Lab 及 Omniverse 相关工具链中直接使用，并支持灵活的组件配置与扩展。
+| 仓库名称 | 功能定位 | 主要内容 |
+|----------|----------|----------|
+| **[agilebot_isaac_sim](https://github.com/sh-agilebot/agilebot_isaac_sim)** | 仿真集成 | Agilebot 机器人在 NVIDIA Isaac Sim 中的集成仓库，包含仿真配置、环境设置及示例 Demo。*不包含任何机器人数字资产。* |
+| **[agilebot_isaac_lab](https://github.com/sh-agilebot/agilebot_isaac_lab)** | 训练学习 | 基于 NVIDIA Isaac Lab 的训练与学习仓库，包含任务定义、环境配置及训练示例。*不包含任何机器人数字资产。* |
+| **[agilebot_isaac_usd_assets](https://github.com/sh-agilebot/agilebot_isaac_usd_assets)** | 资产管理 | 本仓库，统一维护 Agilebot 机器人的 USD 模型、网格文件及贴图资源。 |
 
 ---
 

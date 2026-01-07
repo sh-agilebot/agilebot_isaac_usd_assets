@@ -10,21 +10,30 @@
 
 ---
 
-## 🔗 Related Repositories
+## � Repository Overview
 
-This project is part of the official Agilebot Isaac ecosystem. The following repositories work together to provide a complete simulation and learning workflow:
+This repository is the core asset repository for the official Agilebot Isaac ecosystem, containing USD (Universal Scene Description) digital assets for the full range of Agilebot collaborative robots. It primarily targets the **NVIDIA Isaac Sim and Isaac Lab** ecosystems for robot modeling, physics simulation, algorithm validation, and application development.
 
-- **[agilebot_isaac_sim](https://github.com/sh-agilebot/agilebot_isaac_sim)**: Isaac Sim integration for Agilebot robots, including simulation configurations, setup files, and demo examples. *No robot digital assets are included.*
-- **[agilebot_isaac_lab](https://github.com/sh-agilebot/agilebot_isaac_lab)**: Isaac Lab environments and training examples for Agilebot robots, including task definitions and learning pipelines. *No robot digital assets are included.*
-- **[agilebot_isaac_usd_assets](https://github.com/sh-agilebot/agilebot_isaac_usd_assets)**: Centralized repository for Agilebot robot digital assets, including USD files, meshes, and textures.
+### Core Value
+
+- **Standardized Assets**: All robot models are in USD format, supporting seamless integration across platforms and tools
+- **Physics Optimized**: Pre-configured joint natural frequencies and damping parameters ensure simulation stability and accuracy
+- **Variant Support**: Built-in gripper variants for dynamic end-effector configuration switching
+- **Ready to Use**: No additional configuration required, directly load and use in Isaac Sim and Isaac Lab
+
+USD is an open standard for complex 3D scenes, supporting efficient hierarchical organization, composition, variants, physics, and semantic extensions. Through USD format, these robot models can be directly used in Isaac Sim, Isaac Lab, and Omniverse-related toolchains, with flexible component configuration and extension capabilities.
 
 ---
 
-## 📖 Project Overview
+## 🔗 Ecosystem and Related Repositories
 
-This repository contains **USD (Universal Scene Description)** digital assets for Agilebot Robotics' robot products, primarily targeting the **NVIDIA Isaac Sim and Isaac Lab** ecosystems for robot modeling, physics simulation, algorithm validation, and application development.
+This repository works with the following repositories to provide a complete Agilebot Isaac simulation and learning workflow:
 
-USD is an open standard for complex 3D scenes, supporting efficient hierarchical organization, composition, variants, physics, and semantic extensions. Through USD format, these robot models can be directly used in Isaac Sim, Isaac Lab, and Omniverse-related toolchains, with flexible component configuration and extension capabilities.
+| Repository Name | Function | Main Content |
+|-----------------|----------|--------------|
+| **[agilebot_isaac_sim](https://github.com/sh-agilebot/agilebot_isaac_sim)** | Simulation Integration | Isaac Sim integration for Agilebot robots, including simulation configurations, setup files, and demo examples. *No robot digital assets are included.* |
+| **[agilebot_isaac_lab](https://github.com/sh-agilebot/agilebot_isaac_lab)** | Training & Learning | Isaac Lab environments and training examples for Agilebot robots, including task definitions and learning pipelines. *No robot digital assets are included.* |
+| **[agilebot_isaac_usd_assets](https://github.com/sh-agilebot/agilebot_isaac_usd_assets)** | Asset Management | This repository, maintaining centralized USD files, meshes, and textures for Agilebot robots. |
 
 ---
 
