@@ -58,6 +58,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.0.3] - 2026-02-03
+
+### Fixed
+- Fixed texture loss issue for gbt-c5a_camera_gripper model
+
+---
+
 ## [Unreleased]
 
 ### Planned
