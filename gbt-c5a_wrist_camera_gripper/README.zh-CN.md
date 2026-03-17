@@ -2,26 +2,19 @@
 
 [English README](README.md)
 
-本目录提供一个组合 URDF，包含 GBT C5A 机械臂、腕部相机安装支架和 Robotiq 2F-140 夹爪，并附带 Isaac Sim 导入和相机挂载辅助脚本。
-
-注意事项：
-
-- 仓库默认提供的是 URDF 工作流，不发布 Robotiq 夹爪转换后的 USD。
-- 夹爪部分仅提供 URDF 引用方式，需用户自行准备合法来源的网格并在 Isaac Sim 中转换生成 USD。
-- 腕部相机需要用户在转换后的机器人 USD 上自行挂载。
-- 相机支架模型由 AI 辅助生成，仅作为演示用途，不代表量产结构或实物设计。
+本仓库提供一个组合 URDF，包含 GBT C5A 机械臂、腕部相机安装支架和 Robotiq 2F-140 夹爪，并附带 Isaac Sim 导入和相机挂载辅助脚本。
 
 首次使用建议按下面顺序操作：
 
 1. 补齐 URDF 依赖的 Robotiq STL 文件。
 2. 在 Isaac Sim 中导入 `urdf/gbt-c5a_wrist_camera_gripper.urdf`。
-3. 使用 Isaac Sim 图形界面基于 URDF 生成机器人 USD，并设置关节驱动参数。
-4. 手动或通过脚本把在线相机 USD 挂到转换后的 `camera_link`。
+3. 使用 Isaac Sim 图形界面生成机器人 USD，并设置关节驱动参数。
+4. 手动或通过脚本把在线相机 USD 挂到 `camera_link`。
 
 ## 仓库结构
 
 - `urdf/gbt-c5a_wrist_camera_gripper.urdf`：组合机器人 URDF。
-- `urdf/gbt-c5a_wrist_camera_gripper/`：本地导入后生成的 USD 和配置层目录，默认不纳入版本管理。
+- `urdf/gbt-c5a_wrist_camera_gripper/`：导入后生成的 USD 和配置层。
 - `meshes/visual/`：机械臂、相机支架和复制进来的 Robotiq STL 可视化网格。
 - `meshes/collision/`：碰撞网格和复制进来的 Robotiq STL。
 - `scripts/setup_robotiq_meshes.sh`：把所需 Robotiq STL 复制到本仓库。
@@ -69,11 +62,6 @@ bash scripts/setup_robotiq_meshes.sh /path/to/robotiq_stl_dir
 
 该 URDF 已经包含腕部相机安装位和夹爪结构。导入前只需要确认网格依赖完整。
 
-说明：
-
-- 夹爪部分是 URDF 级集成，不表示仓库会发布对应的夹爪 USD 成品。
-- 腕部相机支架仅用于演示相机安装位和视角方案。
-
 关键链路和关节：
 
 - 机械臂关节：`joint1` 到 `joint6`
@@ -88,6 +76,11 @@ bash scripts/setup_robotiq_meshes.sh /path/to/robotiq_stl_dir
 ## 3. 在 Isaac Sim 中导入 URDF
 
 当前推荐流程是使用 Isaac Sim 图形界面导入。`scripts/convert_urdf_to_usd.py` 保留为实验性替代方案，不建议作为默认流程。
+
+### 兼容性提示
+
+- 如果导入后的 USD 出现腕部夹爪组件与机械臂分离、位置异常或其他不稳定现象，建议优先使用 Isaac Sim 5.0 进行导入。
+- 在本地测试中，同样的 URDF/USD 流程在 Isaac Sim 5.0 下表现正常，未复现上述问题。
 
 ### 导入入口
 
@@ -120,7 +113,7 @@ bash scripts/setup_robotiq_meshes.sh /path/to/robotiq_stl_dir
 
 ### 导入后的结果
 
-导入完成后，通常应在本地看到以下文件：
+导入完成后，通常应看到以下文件：
 
 - `urdf/gbt-c5a_wrist_camera_gripper/gbt-c5a_wrist_camera_gripper.usd`
 - `urdf/gbt-c5a_wrist_camera_gripper/configuration/gbt-c5a_wrist_camera_gripper_base.usd`
@@ -129,8 +122,6 @@ bash scripts/setup_robotiq_meshes.sh /path/to/robotiq_stl_dir
 - `urdf/gbt-c5a_wrist_camera_gripper/configuration/gbt-c5a_wrist_camera_gripper_sensor.usd`
 
 ## 4. 挂载在线相机 USD
-
-机器人 USD 生成后，再执行相机挂载步骤。
 
 推荐相机资源：
 

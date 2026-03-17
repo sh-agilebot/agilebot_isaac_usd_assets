@@ -77,6 +77,11 @@ The online camera USD is attached to `camera_link` in the final step.
 
 The recommended workflow is the Isaac Sim GUI importer. `scripts/convert_urdf_to_usd.py` is kept as an experimental alternative and should not be the default path.
 
+### Compatibility Note
+
+- If the imported USD shows the wrist gripper assembly separating from the arm or behaving abnormally, try importing with Isaac Sim 5.0.
+- In local testing, the same URDF/USD workflow worked normally in Isaac Sim 5.0 and did not reproduce this issue.
+
 ### Import Entry
 
 Open the URDF Importer in Isaac Sim and use:

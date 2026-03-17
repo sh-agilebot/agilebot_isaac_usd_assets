@@ -93,9 +93,18 @@
 
 ---
 
+## [0.0.6] - 2026-03-17
+
+### 修复
+- 修正 `gbt-c5a_wrist_camera_gripper/urdf/gbt-c5a_wrist_camera_gripper.urdf` 中错误的质量与惯量参数，提升导入质量和物理稳定性
+
+### 文档
+- 在 `gbt-c5a_wrist_camera_gripper/README.zh-CN.md` 中新增 Isaac Sim 版本兼容性提示，说明若导入后出现腕部夹爪组件分离或行为异常，建议优先使用 Isaac Sim 5.0
+
+---
+
 ## [未发布]
 
 ### 计划中
 - 添加工业 SCARA 机器人（GBT-S3A、GBT-S6A、GBT-S10A、GBT-S20A）
 - 添加工业 PUMA 机器人（GBT-P7A）
-

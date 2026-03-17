@@ -93,6 +93,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.0.6] - 2026-03-17
+
+### Fixed
+- Corrected incorrect mass and inertia parameters in `gbt-c5a_wrist_camera_gripper/urdf/gbt-c5a_wrist_camera_gripper.urdf` to improve import quality and physical stability
+
+### Documentation
+- Added Isaac Sim version compatibility notes to `gbt-c5a_wrist_camera_gripper/README.md`, including a recommendation to use Isaac Sim 5.0 if the wrist gripper assembly separates or behaves abnormally after import
+
+---
+
 ## [Unreleased]
 
 ### Planned
