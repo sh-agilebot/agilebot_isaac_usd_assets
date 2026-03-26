@@ -103,6 +103,16 @@
 
 ---
 
+## [0.0.7] - 2026-03-26
+
+### 变更
+- 更新 gbt-c5a_wrist_camera_gripper 工作流：移除 `add_online_camera_usd.py`，新增 `convert_urdf_to_usd.py` 和 `remove_camera_rect_light.py`，改进 URDF 转 USD 流程
+
+### 文档
+- 更新 gbt-c5a_wrist_camera_gripper 的 README 和 README.zh-CN.md
+
+---
+
 ## [未发布]
 
 ### 计划中

@@ -103,6 +103,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.0.7] - 2026-03-26
+
+### Changed
+- Updated gbt-c5a_wrist_camera_gripper workflow: removed `add_online_camera_usd.py`, added `convert_urdf_to_usd.py` and `remove_camera_rect_light.py` for improved URDF-to-USD conversion pipeline
+
+### Documentation
+- Updated README and README.zh-CN.md for gbt-c5a_wrist_camera_gripper
+
+---
+
 ## [Unreleased]
 
 ### Planned

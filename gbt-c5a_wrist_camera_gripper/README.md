@@ -2,39 +2,41 @@
 
 [中文说明 / Chinese](README.zh-CN.md)
 
-This repository packages a combined URDF for the GBT C5A arm, wrist camera mount, and Robotiq 2F-140 gripper, plus helper scripts for Isaac Sim import and camera attachment.
+This repository provides a combined URDF for the GBT C5A arm, a wrist camera mount, and a Robotiq 2F-140 gripper, plus a script-first workflow for generating USD assets for Isaac Sim.
 
-Recommended first-time workflow:
-
-1. Install the Robotiq STL files required by the URDF.
-2. Import `urdf/gbt-c5a_wrist_camera_gripper.urdf` in Isaac Sim.
-3. Generate the robot USD with the Isaac Sim GUI importer and configure joint drives.
-4. Attach the online camera USD to `camera_link` manually or with the helper script.
+The documented workflow in this repository is script-only. GUI import steps are intentionally omitted so the process stays reproducible for open-source users.
 
 ## Repository Layout
 
-- `urdf/gbt-c5a_wrist_camera_gripper.urdf`: Combined robot URDF.
-- `urdf/gbt-c5a_wrist_camera_gripper/`: Generated USD and configuration layers after import.
-- `meshes/visual/`: Visual meshes for the arm, camera mount, and copied Robotiq STL files.
-- `meshes/collision/`: Collision meshes and copied Robotiq STL files.
-- `scripts/setup_robotiq_meshes.sh`: Copies the required Robotiq STL files into this repository.
-- `scripts/convert_urdf_to_usd.py`: Experimental scripted import path. Useful for reference, not the recommended workflow.
-- `scripts/add_online_camera_usd.py`: Adds the online camera USD under `camera_link`.
+- `urdf/gbt-c5a_wrist_camera_gripper.urdf`: combined robot URDF
+- `meshes/visual/`: visual meshes used by the URDF
+- `meshes/collision/`: collision meshes used by the URDF
+- `scripts/setup_robotiq_meshes.sh`: installs the required Robotiq STL files into this repository
+- `scripts/convert_urdf_to_usd.py`: imports the URDF, attaches the camera USD, and updates the physics layer
+- `scripts/remove_camera_rect_light.py`: deactivates the `RectLight` prim under the attached Orbbec Gemini2 camera
+- `urdf/gbt-c5a_wrist_camera_gripper/`: generated USD outputs after import
 
-## 1. Install the Required Robotiq STL Files
+## Prerequisites
 
-### Copyright Notice
+- Isaac Sim or Isaac Lab Python environment
+- Robotiq 2F-140 STL files from a lawful source
+
+Important notes:
 
 - This repository does not redistribute Robotiq STL assets.
-- Download the Robotiq 2F-140 STL files yourself from a legitimate source.
+- `scripts/convert_urdf_to_usd.py` is not a plain Python utility. It depends on Isaac runtime modules such as `isaacsim`, `isaaclab`, `omni.kit.commands`, and `pxr`.
+- `scripts/remove_camera_rect_light.py` must also run inside an Isaac Sim, Isaac Lab, or other `pxr`-enabled Python environment.
+- The camera postprocess step adds the Orbbec Gemini2 USD by remote asset URL. If that remote asset is unavailable in your environment, run the workflow with `--skip-camera`.
 
-Reference source:
+## Quick Start
 
-- `https://github.com/ros-industrial-attic/robotiq`
+1. Install the required Robotiq meshes:
 
-### Required STL Files
+```bash
+bash scripts/setup_robotiq_meshes.sh /path/to/robotiq_stl_dir
+```
 
-Prepare these 6 files:
+Required STL files:
 
 - `robotiq_arg2f_base_link.stl`
 - `robotiq_arg2f_coupling.stl`
@@ -43,77 +45,123 @@ Prepare these 6 files:
 - `robotiq_arg2f_140_inner_knuckle.stl`
 - `robotiq_arg2f_140_inner_finger.stl`
 
-### One-Command Setup
+2. Run the scripted import inside an Isaac Sim or Isaac Lab Python environment:
 
-After downloading the STL files into a local directory, run:
+Recommended one-shot command: this makes the current project-recommended parameters explicit so the result is easier to reproduce.
 
 ```bash
-bash scripts/setup_robotiq_meshes.sh /path/to/robotiq_stl_dir
+python scripts/convert_urdf_to_usd.py \
+  urdf/gbt-c5a_wrist_camera_gripper.urdf \
+  urdf/gbt-c5a_wrist_camera_gripper/gbt-c5a_wrist_camera_gripper.usd \
+  --drive-type force \
+  --arm-natural-frequency 300.0 \
+  --gripper-natural-frequency 300.0 \
+  --mimic-natural-frequency 2500.0 \
+  --damping-ratio 0.005 \
+  --finger-max-force 200.0 \
+  --solver-position-iterations 64 \
+  --solver-velocity-iterations 16
 ```
 
-The script copies the files into:
+This recommended command:
 
-- `meshes/visual/`
-- `meshes/collision/`
+- runs headless
+- keeps `fix_base=true`
+- keeps `merge_fixed_joints=false`
+- automatically attaches the camera and updates the physics layer
+- if you want to hide the camera light, run `python scripts/remove_camera_rect_light.py` after import
 
-After that, `urdf/gbt-c5a_wrist_camera_gripper.urdf` is ready for import.
+```bash
+python scripts/convert_urdf_to_usd.py
+```
 
-## 2. URDF Structure Overview
+By default, this command:
 
-The URDF already includes the wrist camera mount and gripper assembly. Before import, you only need to make sure all required meshes are present.
+- reads `urdf/gbt-c5a_wrist_camera_gripper.urdf`
+- writes `urdf/gbt-c5a_wrist_camera_gripper/gbt-c5a_wrist_camera_gripper.usd`
+- runs headless
+- keeps `fix_base=true`
+- keeps `merge_fixed_joints=false`
+- automatically runs postprocess to attach the camera and update the physics layer
+- does not remove the camera `RectLight` unless you run `scripts/remove_camera_rect_light.py`
 
-Key links and joints:
+## Script Workflow
 
-- Arm joints: `joint1` to `joint6`
-- Camera mount fixed joint: `camera_mount_joint`
-- Camera attach point: `camera_link`
-- Gripper fixed joint: `gripper_joint`
-- Gripper active joint: `finger_joint`
-- Gripper mimic joints: `left_inner_knuckle_joint`, `left_inner_finger_joint`, `right_outer_knuckle_joint`, `right_inner_knuckle_joint`, `right_inner_finger_joint`
+Generate USD with explicit input and output paths:
 
-The online camera USD is attached to `camera_link` in the final step.
+```bash
+python scripts/convert_urdf_to_usd.py \
+  urdf/gbt-c5a_wrist_camera_gripper.urdf \
+  urdf/gbt-c5a_wrist_camera_gripper/gbt-c5a_wrist_camera_gripper.usd
+```
 
-## 3. Import the URDF into Isaac Sim
+Import only, without camera or physics postprocess:
 
-The recommended workflow is the Isaac Sim GUI importer. `scripts/convert_urdf_to_usd.py` is kept as an experimental alternative and should not be the default path.
+```bash
+python scripts/convert_urdf_to_usd.py --skip-camera --skip-physics
+```
 
-### Compatibility Note
+Postprocess an existing USD stage:
 
-- If the imported USD shows the wrist gripper assembly separating from the arm or behaving abnormally, try importing with Isaac Sim 5.0.
-- In local testing, the same URDF/USD workflow worked normally in Isaac Sim 5.0 and did not reproduce this issue.
+```bash
+python scripts/convert_urdf_to_usd.py postprocess \
+  urdf/gbt-c5a_wrist_camera_gripper/gbt-c5a_wrist_camera_gripper.usd
+```
 
-### Import Entry
+Remove the `RectLight` under the attached Orbbec camera:
 
-Open the URDF Importer in Isaac Sim and use:
+```bash
+python scripts/remove_camera_rect_light.py \
+  urdf/gbt-c5a_wrist_camera_gripper/gbt-c5a_wrist_camera_gripper.usd
+```
 
-- Input file: `urdf/gbt-c5a_wrist_camera_gripper.urdf`
-- Output file: `urdf/gbt-c5a_wrist_camera_gripper/gbt-c5a_wrist_camera_gripper.usd`
+Useful help commands:
 
-### Recommended Joint Drive Settings
+```bash
+python scripts/convert_urdf_to_usd.py --help
+python scripts/convert_urdf_to_usd.py postprocess --help
+python scripts/remove_camera_rect_light.py --help
+```
 
-Focus on `Joints & Drives` during import.
+## Key Options
 
-- Arm joints `joint1` to `joint6`: `Target = Position`, `Natural Frequency = 300`
-- Gripper active joint `finger_joint`: `Target = Position`, `Natural Frequency = 300`
-- Gripper mimic joints: `Natural Frequency = 2500`
+Common import options:
 
-Also verify:
+- `--no-headless`: show the Isaac app window during import
+- `--no-fix-base`: import the robot with a floating base
+- `--merge-fixed-joints`: not recommended for this robot
+- `--drive-type force|acceleration`
+- `--arm-natural-frequency`
+- `--gripper-natural-frequency`
+- `--mimic-natural-frequency`
+- `--damping-ratio`
+- `--finger-max-force`
 
-- `Joint Configuration = Natural Frequency`
-- `Drive Type = Force`
+Common postprocess options:
 
-Keep Isaac Sim default damping unless the gripper later feels too soft.
+- `--skip-camera`: skip camera attachment
+- `--skip-physics`: skip physics-layer updates
+- `--physics-stage <path>`: use an explicit physics layer
+- `--skip-finger-friction`: skip finger material creation and binding
+- `--skip-articulation-config`: skip articulation solver tuning
 
-Reference images:
+Default script values:
 
-- `docs/images/isaacsim_urdf_import_joint_settings.png`
-- `docs/images/isaacsim_manual_drag_camera.png`
+- arm natural frequency: `300.0`
+- gripper natural frequency: `300.0`
+- mimic natural frequency: `2500.0`
+- damping ratio: `0.02`
+- finger max force: `5000.0`
+- drive type: `force`
+- static friction: `1.2`
+- dynamic friction: `1.1`
+- restitution: `0.0`
+- solver position iterations: `96`
+- solver velocity iterations: `8`
 
-![Isaac Sim URDF import joint settings](docs/images/isaacsim_urdf_import_joint_settings.png)
+## Outputs
 
-### Expected Generated Files
-
-After import, the following files should exist:
+After a successful import, the generated files usually include:
 
 - `urdf/gbt-c5a_wrist_camera_gripper/gbt-c5a_wrist_camera_gripper.usd`
 - `urdf/gbt-c5a_wrist_camera_gripper/configuration/gbt-c5a_wrist_camera_gripper_base.usd`
@@ -121,86 +169,30 @@ After import, the following files should exist:
 - `urdf/gbt-c5a_wrist_camera_gripper/configuration/gbt-c5a_wrist_camera_gripper_robot.usd`
 - `urdf/gbt-c5a_wrist_camera_gripper/configuration/gbt-c5a_wrist_camera_gripper_sensor.usd`
 
-## 4. Attach the Online Camera USD
+## Validation
 
-Recommended camera asset:
+Minimum validation after changes:
 
-- `Isaac/Sensors/Orbbec/Gemini2/orbbec_gemini2_v1.0.usd`
+- run `python3 -m py_compile scripts/convert_urdf_to_usd.py`
+- run `python3 -m py_compile scripts/remove_camera_rect_light.py`
+- confirm the top-level USD was generated
+- confirm the physics layer exists
+- open the USD in Isaac Sim and check that the camera view is available
+- confirm the gripper is visible in `Stream_rgb`
+- if `scripts/remove_camera_rect_light.py` was used, confirm the `RectLight` is inactive or no longer visible in the stage
 
-### Manual Method
+## Troubleshooting
 
-In Isaac Sim:
+- If the mesh setup script fails, verify that all 6 required STL files exist with the exact expected filenames.
+- If the conversion script fails immediately, make sure you are running it inside an Isaac Sim or Isaac Lab Python environment.
+- If camera attachment fails, verify that your Isaac Sim environment can access the remote Orbbec Gemini2 asset. If not, rerun with `--skip-camera`.
+- If the camera light is still visible after import, run `python scripts/remove_camera_rect_light.py`. If your stage uses a different prim hierarchy, rerun with `--prim-path <path>`.
+- If the script cannot find the physics layer during postprocess, rerun with `--physics-stage <path>`.
+- Do not enable fixed-joint merging for this robot. Keeping `merge_fixed_joints=false` preserves the expected camera and gripper hierarchy.
 
-1. Open `Isaac/5.1/Isaac/Sensors/Orbbec/Gemini2/` in `Content` or `Asset Browser`.
-2. Find `orbbec_gemini2_v1.0.usd`.
-3. Find `camera_link` in `Stage`.
-4. Drag the camera USD under `camera_link`.
+## Known Limitations
 
-Common `camera_link` prim paths:
-
-- `/GBT_C5A_wrist_camera_gripper/camera_mount_link/camera_link`
-- `/World/GBT_C5A_wrist_camera_gripper/camera_mount_link/camera_link`
-
-![Isaac Sim manual drag camera USD](docs/images/isaacsim_manual_drag_camera.png)
-
-### Script Method
-
-Run inside an Isaac Sim or Isaac Lab Python environment:
-
-```bash
-python scripts/add_online_camera_usd.py
-```
-
-To specify the target stage explicitly:
-
-```bash
-python scripts/add_online_camera_usd.py urdf/gbt-c5a_wrist_camera_gripper/gbt-c5a_wrist_camera_gripper.usd
-```
-
-The script:
-
-- Finds the target USD stage
-- Resolves `camera_link`
-- Adds `orbbec_gemini2_v1.0.usd` as a reference under that prim
-- Removes older legacy camera references if they exist
-
-## 5. Verify the Camera Attachment
-
-After attaching the camera USD to `camera_link`, verify it visually in Isaac Sim.
-
-1. Load `gbt-c5a_wrist_camera_gripper.usd`.
-2. Open the camera menu in the viewport.
-3. Expand `Cameras` and switch to `Stream_rgb`.
-4. Confirm that the gripper is visible.
-
-Success criteria:
-
-- `Stream_rgb` can be selected normally
-- The image is not black or empty
-- The gripper is visible in the RGB view
-
-If the gripper is not visible, check:
-
-- The camera USD is actually attached under `camera_link`
-- The pose of `camera_link` was not modified accidentally
-- You selected the RGB stream rather than depth or infrared
-
-![Isaac Sim verify RGB camera view](docs/images/isaacsim_verify_rgb_camera_view.png)
-
-## 6. Checklist
-
-At minimum, the full workflow should leave you with:
-
-- The 6 required Robotiq STL files copied into `meshes/visual/` and `meshes/collision/`
-- A successful Isaac Sim import of `urdf/gbt-c5a_wrist_camera_gripper.urdf`
-- Recommended `Natural Frequency` settings applied during import
-- `urdf/gbt-c5a_wrist_camera_gripper/gbt-c5a_wrist_camera_gripper.usd` generated
-- The online camera USD attached to `camera_link`
-- A visible gripper in `Stream_rgb`
-
-## 7. References
-
-- URDF Importer Extension:
-  `https://docs.isaacsim.omniverse.nvidia.com/5.1.0/importer_exporter/ext_isaacsim_asset_importer_urdf.html`
-- Setup a Manipulator:
-  `https://docs.isaacsim.omniverse.nvidia.com/5.1.0/robot_setup_tutorials/tutorial_import_assemble_manipulator.html`
+- The workflow depends on Isaac runtime modules and cannot be fully executed in a generic Python environment.
+- The default camera asset reference depends on remote Isaac asset availability.
+- Robotiq assets must be obtained separately by the user.
+- The documented workflow is script-only; GUI steps are intentionally not covered here.
