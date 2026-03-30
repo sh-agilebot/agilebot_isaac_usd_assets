@@ -113,6 +113,23 @@
 
 ---
 
+## [0.0.8] - 2026-03-30
+
+### 新增
+- 新增碰撞体同步功能到 `convert_urdf_to_usd.py` - 自动为机器人 link 添加碰撞几何体
+- README 新增 Miniforge 环境激活说明
+
+### 变更
+- 重构 `convert_urdf_to_usd.py` - 将 `remove_camera_rect_light.py` 功能合并到 postprocess 步骤中
+- 移除独立的 `remove_camera_rect_light.py` 脚本
+- postprocess 现在固定执行：相机挂载 + 删除 RectLight + 碰撞体补齐 + physics layer 更新（不再有 `--skip-camera` 或 `--skip-physics` 选项）
+- 更新 `gbt-c5a_wrist_camera_gripper.urdf` 参数
+
+### 文档
+- 更新 gbt-c5a_wrist_camera_gripper 的 README.md 和 README.zh-CN.md，包含新工作流和碰撞体同步说明
+
+---
+
 ## [未发布]
 
 ### 计划中

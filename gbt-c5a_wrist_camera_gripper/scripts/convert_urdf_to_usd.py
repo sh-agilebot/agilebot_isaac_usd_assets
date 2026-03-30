@@ -6,8 +6,10 @@ import argparse
 import re
 import subprocess
 import sys
+import xml.etree.ElementTree as ET
+from dataclasses import dataclass
 from pathlib import Path
-from typing import Sequence
+from typing import Iterable, Sequence
 
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
@@ -39,6 +41,12 @@ DEFAULT_CAMERA_PRIM_CANDIDATES = (
     "/GBT_C5A_wrist_camera_gripper/camera_mount_link/camera_link",
     "/World/GBT_C5A_wrist_camera_gripper/camera_mount_link/camera_link",
 )
+DEFAULT_ROBOT_ROOT_NAME = "GBT_C5A_wrist_camera_gripper"
+DEFAULT_CAMERA_LINK_CANDIDATES = (
+    "/camera_link",
+    "/camera_mount_link/camera_link",
+)
+DEFAULT_LIGHT_RELATIVE_PATH = "/Orbbec_Gemini2/camera_ldm/camera_ldm/RectLight"
 DEFAULT_CAMERA_ASSET_URL = (
     "https://omniverse-content-production.s3-us-west-2.amazonaws.com/"
     "Assets/Isaac/5.1/Isaac/Sensors/Orbbec/Gemini2/orbbec_gemini2_v1.0.usd"
@@ -57,6 +65,7 @@ DEFAULT_SOLVER_POSITION_ITERATIONS = 96
 DEFAULT_SOLVER_VELOCITY_ITERATIONS = 8
 DEFAULT_SLEEP_THRESHOLD = 0.00005
 DEFAULT_STABILIZATION_THRESHOLD = 0.00001
+DEFAULT_REMOVE_CAMERA_RECT_LIGHT = True
 
 DEFAULT_FINGER_BIND_TARGET_CANDIDATES = {
     "left": (
@@ -73,12 +82,30 @@ DEFAULT_FINGER_BIND_TARGET_CANDIDATES = {
     ),
 }
 GEOM_TYPE_NAMES = {"Mesh", "Cube", "Capsule", "Cylinder", "Sphere", "Box"}
+COLLISION_SCOPE_NAMES = {"collision", "collisions", "collision_meshes", "collision_mesh"}
+DEFAULT_COLLIDER_APPROXIMATION = "convexHull"
+DEFAULT_COLLIDER_CONTACT_OFFSET = 0.002
+DEFAULT_COLLIDER_REST_OFFSET = 0.0
+
+
+@dataclass(frozen=True)
+class LinkCollisionSpec:
+    link_name: str
+    collision_count: int
 
 
 def import_usd_modules():
     from pxr import Sdf, Usd, UsdGeom, UsdPhysics, UsdShade
 
     return Sdf, Usd, UsdGeom, UsdPhysics, UsdShade
+
+
+def import_physx_schema():
+    try:
+        from pxr import PhysxSchema
+    except Exception:  # pragma: no cover - optional dependency
+        return None
+    return PhysxSchema
 
 
 def resolve_repo_path(value: str | Path) -> Path:
@@ -119,6 +146,20 @@ def existing_physics_stage_path(stage_path: Path, explicit_path: str | None) -> 
     if not candidates:
         raise FileNotFoundError(f"Could not find a physics USD layer near {stage_path}")
     return candidates[0].resolve()
+
+
+def existing_urdf_path(value: str | None) -> Path:
+    if value:
+        path = resolve_repo_path(value)
+        if not path.exists():
+            raise FileNotFoundError(f"URDF file not found: {path}")
+        return path
+
+    preferred = resolve_repo_path(DEFAULT_URDF_PATH)
+    if preferred.exists():
+        return preferred
+
+    raise FileNotFoundError(f"Could not find URDF file: {DEFAULT_URDF_PATH}")
 
 
 def iter_matching_joints(robot_model, pattern: str):
@@ -259,11 +300,97 @@ def camera_asset_path() -> str:
     return DEFAULT_CAMERA_ASSET_URL
 
 
+def normalize_prim_path(prim_path: str) -> str:
+    return prim_path if prim_path.startswith("/") else f"/{prim_path}"
+
+
+def resolve_robot_root_path(stage) -> str:
+    preferred_candidates = (
+        f"/{DEFAULT_ROBOT_ROOT_NAME}",
+        f"/World/{DEFAULT_ROBOT_ROOT_NAME}",
+    )
+    for prim_path in preferred_candidates:
+        if stage.GetPrimAtPath(prim_path).IsValid():
+            return prim_path
+
+    default_prim = stage.GetDefaultPrim()
+    if default_prim and default_prim.IsValid():
+        if default_prim.GetName() == DEFAULT_ROBOT_ROOT_NAME:
+            return str(default_prim.GetPath())
+
+        robot_child = default_prim.GetChild(DEFAULT_ROBOT_ROOT_NAME)
+        if robot_child and robot_child.IsValid():
+            return str(robot_child.GetPath())
+
+    matches = [str(prim.GetPath()) for prim in stage.Traverse() if prim.GetName() == DEFAULT_ROBOT_ROOT_NAME]
+    if matches:
+        for prim_path in matches:
+            if prim_path.startswith(f"/{DEFAULT_ROBOT_ROOT_NAME}"):
+                return prim_path
+        return matches[0]
+
+    return f"/{DEFAULT_ROBOT_ROOT_NAME}"
+
+
+def resolve_camera_link_path(stage, robot_root_path: str) -> str:
+    for relative_path in DEFAULT_CAMERA_LINK_CANDIDATES:
+        prim_path = f"{robot_root_path}{relative_path}"
+        if stage.GetPrimAtPath(prim_path).IsValid():
+            return prim_path
+
+    matches = [str(prim.GetPath()) for prim in stage.Traverse() if prim.GetName() == "camera_link"]
+    if matches:
+        for prim_path in matches:
+            if prim_path.startswith(f"{robot_root_path}/"):
+                return prim_path
+        return matches[0]
+
+    return f"{robot_root_path}{DEFAULT_CAMERA_LINK_CANDIDATES[0]}"
+
+
+def resolve_light_prim_path(stage, explicit_prim_path: str | None = None) -> str:
+    if explicit_prim_path:
+        return normalize_prim_path(explicit_prim_path)
+    robot_root_path = resolve_robot_root_path(stage)
+    camera_link_path = resolve_camera_link_path(stage, robot_root_path)
+    return f"{camera_link_path}{DEFAULT_LIGHT_RELATIVE_PATH}"
+
+
+def deactivate_prim(stage, prim_path: str) -> tuple[bool, str]:
+    prim = stage.GetPrimAtPath(prim_path)
+    existed_in_composed_stage = prim.IsValid()
+
+    # Author an inactive over so the referenced light disappears from the composed stage.
+    override = stage.OverridePrim(prim_path)
+    if not override.IsValid():
+        raise RuntimeError(f"Failed to create override prim for {prim_path}")
+    override.SetActive(False)
+
+    root_layer = stage.GetRootLayer()
+    root_layer.Save()
+    return existed_in_composed_stage, root_layer.realPath or root_layer.identifier
+
+
 def list_reference_assets(prim) -> list[str]:
     refs = prim.GetMetadata("references")
     if refs is None:
         return []
     return [ref.assetPath for ref in refs.prependedItems]
+
+
+def parse_urdf_collision_specs(urdf_path: Path) -> list[LinkCollisionSpec]:
+    tree = ET.parse(urdf_path)
+    root = tree.getroot()
+
+    specs: list[LinkCollisionSpec] = []
+    for link in root.findall("link"):
+        link_name = link.attrib.get("name")
+        if not link_name:
+            continue
+        collision_count = len(link.findall("collision"))
+        if collision_count > 0:
+            specs.append(LinkCollisionSpec(link_name=link_name, collision_count=collision_count))
+    return specs
 
 
 def add_camera_reference(stage_path: Path) -> None:
@@ -292,6 +419,29 @@ def add_camera_reference(stage_path: Path) -> None:
     print(f"Saved stage: {stage_path}", flush=True)
 
 
+def remove_camera_rect_light(stage_path: Path, explicit_prim_path: str | None = None) -> None:
+    _, Usd, _, _, _ = import_usd_modules()
+
+    stage = Usd.Stage.Open(str(stage_path))
+    if stage is None:
+        raise RuntimeError(f"Failed to open stage: {stage_path}")
+
+    prim_path = resolve_light_prim_path(stage, explicit_prim_path)
+    existed_in_composed_stage, saved_layer = deactivate_prim(stage, prim_path)
+
+    print(f"Stage: {stage_path}", flush=True)
+    print(f"RectLight prim path: {prim_path}", flush=True)
+    if existed_in_composed_stage:
+        print("Result: deactivated existing RectLight prim in the composed stage.", flush=True)
+    else:
+        print(
+            "Result: authored an inactive over for the RectLight prim path. "
+            "This is expected if the light only exists through a referenced camera asset.",
+            flush=True,
+        )
+    print(f"Saved layer: {saved_layer}", flush=True)
+
+
 def find_default_prim(stage):
     default_prim = stage.GetDefaultPrim()
     if default_prim and default_prim.IsValid():
@@ -301,6 +451,29 @@ def find_default_prim(stage):
     if not root_children:
         raise RuntimeError("Could not determine a default prim for the USD stage.")
     return root_children[0]
+
+
+def stage_default_prim_path(stage) -> str | None:
+    default_prim = stage.GetDefaultPrim()
+    if default_prim and default_prim.IsValid():
+        return str(default_prim.GetPath())
+    return None
+
+
+def stage_has_prim(stage, prim_path: str) -> bool:
+    prim = stage.GetPrimAtPath(prim_path)
+    return prim.IsValid() and prim.IsActive()
+
+
+def resolve_collider_search_root(stage, explicit_root: str | None) -> str | None:
+    if explicit_root:
+        prim = stage.GetPrimAtPath(explicit_root)
+        if not prim.IsValid():
+            raise ValueError(f"Root prim does not exist in USD stage: {explicit_root}")
+        return explicit_root
+    if stage_has_prim(stage, "/colliders"):
+        return "/colliders"
+    return stage_default_prim_path(stage)
 
 
 def find_articulation_root_prim(stage):
@@ -326,6 +499,156 @@ def find_articulation_root_prim(stage):
 def is_bindable_geom(prim) -> bool:
     _, _, UsdGeom, _, _ = import_usd_modules()
     return prim.GetTypeName() in GEOM_TYPE_NAMES or prim.IsA(UsdGeom.Gprim)
+
+
+def is_collision_container_prim(prim) -> bool:
+    name = prim.GetName().lower()
+    path = str(prim.GetPath()).lower()
+    if name in COLLISION_SCOPE_NAMES:
+        return True
+    return any(f"/{candidate}" in path for candidate in COLLISION_SCOPE_NAMES)
+
+
+def iter_candidate_link_prims(stage, link_name: str, root_prim_path: str | None) -> Iterable[object]:
+    for prim in stage.Traverse():
+        if not prim.IsValid() or not prim.IsActive():
+            continue
+        if prim.GetName() != link_name and not str(prim.GetPath()).endswith(f"/{link_name}"):
+            continue
+
+        if root_prim_path:
+            prim_path = str(prim.GetPath())
+            if prim_path == root_prim_path or prim_path.startswith(f"{root_prim_path}/"):
+                yield prim
+            continue
+
+        yield prim
+
+
+def find_link_prim(stage, link_name: str, root_prim_path: str | None):
+    candidates = list(iter_candidate_link_prims(stage, link_name, root_prim_path))
+    if not candidates:
+        return None
+
+    for prim in candidates:
+        if str(prim.GetPath()).endswith(f"/{link_name}"):
+            return prim
+    return candidates[0]
+
+
+def collect_collision_geometry_prims(link_prim, Usd, UsdGeom) -> list[object]:
+    collision_container_prims = []
+    geom_prims = []
+
+    for prim in Usd.PrimRange(link_prim):
+        if prim == link_prim or not prim.IsActive():
+            continue
+        if is_collision_container_prim(prim):
+            collision_container_prims.append(prim)
+        if prim.GetTypeName() in GEOM_TYPE_NAMES or prim.IsA(UsdGeom.Gprim):
+            geom_prims.append(prim)
+
+    if collision_container_prims:
+        filtered = [
+            prim
+            for prim in geom_prims
+            if any(str(prim.GetPath()).startswith(str(container.GetPath())) for container in collision_container_prims)
+        ]
+        if filtered:
+            return filtered
+
+    return geom_prims
+
+
+def apply_collision_to_geom(
+    prim,
+    UsdPhysics,
+    PhysxSchema,
+    approximation: str | None,
+    contact_offset: float,
+    rest_offset: float,
+) -> None:
+    collision_api = UsdPhysics.CollisionAPI.Apply(prim)
+    collision_api.CreateCollisionEnabledAttr().Set(True)
+
+    if approximation and prim.GetTypeName() == "Mesh" and hasattr(UsdPhysics, "MeshCollisionAPI"):
+        mesh_collision_api = UsdPhysics.MeshCollisionAPI.Apply(prim)
+        mesh_collision_api.CreateApproximationAttr().Set(approximation)
+
+    if PhysxSchema is not None and hasattr(PhysxSchema, "PhysxCollisionAPI"):
+        physx_collision_api = PhysxSchema.PhysxCollisionAPI.Apply(prim)
+        if hasattr(physx_collision_api, "CreateContactOffsetAttr"):
+            physx_collision_api.CreateContactOffsetAttr().Set(contact_offset)
+        if hasattr(physx_collision_api, "CreateRestOffsetAttr"):
+            physx_collision_api.CreateRestOffsetAttr().Set(rest_offset)
+
+
+def add_colliders_to_stage(
+    stage_path: Path,
+    urdf_path: Path,
+) -> None:
+    _, Usd, UsdGeom, UsdPhysics, _ = import_usd_modules()
+    PhysxSchema = import_physx_schema()
+
+    stage = Usd.Stage.Open(str(stage_path))
+    if stage is None:
+        raise RuntimeError(f"Failed to open USD stage: {stage_path}")
+
+    root_prim_path = resolve_collider_search_root(stage, None)
+    collision_specs = parse_urdf_collision_specs(urdf_path)
+    if not collision_specs:
+        raise RuntimeError(f"No collision links found in URDF: {urdf_path}")
+
+    print(f"Collider URDF source: {urdf_path}", flush=True)
+    print(f"Collider target stage: {stage_path}", flush=True)
+    print(f"Collider search root: {root_prim_path or '<entire stage>'}", flush=True)
+    print(f"Collider mesh approximation: {DEFAULT_COLLIDER_APPROXIMATION}", flush=True)
+    if PhysxSchema is None:
+        print("PhysxSchema not available; applying UsdPhysics collision APIs only.", flush=True)
+
+    matched_links = 0
+    total_geom_prims = 0
+    total_applied_prims = 0
+
+    for spec in collision_specs:
+        link_prim = find_link_prim(stage, spec.link_name, root_prim_path)
+        if link_prim is None:
+            print(f"[skip] collider link not found in USD: {spec.link_name}", flush=True)
+            continue
+
+        geom_prims = collect_collision_geometry_prims(link_prim, Usd, UsdGeom)
+        if not geom_prims:
+            print(f"[skip] no collider geometry under link: {spec.link_name} ({link_prim.GetPath()})", flush=True)
+            continue
+
+        matched_links += 1
+        total_geom_prims += len(geom_prims)
+        print(
+            f"[collider] {spec.link_name}: URDF collisions={spec.collision_count}, "
+            f"USD geoms={len(geom_prims)}, prim={link_prim.GetPath()}",
+            flush=True,
+        )
+
+        for prim in geom_prims:
+            print(f"  - {prim.GetPath()} [{prim.GetTypeName()}]", flush=True)
+            apply_collision_to_geom(
+                prim=prim,
+                UsdPhysics=UsdPhysics,
+                PhysxSchema=PhysxSchema,
+                approximation=DEFAULT_COLLIDER_APPROXIMATION,
+                contact_offset=DEFAULT_COLLIDER_CONTACT_OFFSET,
+                rest_offset=DEFAULT_COLLIDER_REST_OFFSET,
+            )
+            total_applied_prims += 1
+
+    print(
+        f"Collider summary: matched_links={matched_links}, collision_links={len(collision_specs)}, "
+        f"geometry_prims={total_geom_prims}, updated_prims={total_applied_prims}",
+        flush=True,
+    )
+
+    stage.Save()
+    print(f"Saved collider stage: {stage_path}", flush=True)
 
 
 def collect_finger_bind_targets(stage) -> list[object]:
@@ -450,17 +773,15 @@ def pump_kit_updates(count: int = 5) -> None:
 
 def build_postprocess_command(args: argparse.Namespace, usd_path: Path) -> list[str]:
     command = [sys.executable, str(Path(__file__).resolve()), "postprocess", str(usd_path)]
+    command.extend(["--urdf", str(resolve_repo_path(args.urdf))])
     if args.physics_stage:
         command.extend(["--physics-stage", str(resolve_repo_path(args.physics_stage))])
-    if args.skip_camera:
-        command.append("--skip-camera")
-    if args.skip_physics:
-        command.append("--skip-physics")
+    if not args.remove_camera_rect_light:
+        command.append("--no-remove-camera-rect-light")
     if args.skip_finger_friction:
         command.append("--skip-finger-friction")
     if args.skip_articulation_config:
         command.append("--skip-articulation-config")
-
     command.extend(["--static-friction", str(args.static_friction)])
     command.extend(["--dynamic-friction", str(args.dynamic_friction)])
     command.extend(["--restitution", str(args.restitution)])
@@ -502,12 +823,10 @@ def run_import(args: argparse.Namespace) -> int:
         if import_result.returncode != 0:
             return import_result.returncode
 
-        if not args.skip_camera or not args.skip_physics:
-            postprocess_command = build_postprocess_command(args, usd_path)
-            print(f"Running postprocess subprocess: {' '.join(postprocess_command)}", flush=True)
-            postprocess_result = subprocess.run(postprocess_command)
-            return postprocess_result.returncode
-        return 0
+        postprocess_command = build_postprocess_command(args, usd_path)
+        print(f"Running postprocess subprocess: {' '.join(postprocess_command)}", flush=True)
+        postprocess_result = subprocess.run(postprocess_command)
+        return postprocess_result.returncode
 
     def callback() -> None:
         print("Starting URDF import", flush=True)
@@ -573,16 +892,36 @@ def run_import(args: argparse.Namespace) -> int:
     return 0
 
 
-def run_postprocess_actions(stage_path: Path, physics_stage_path: Path | None, args: argparse.Namespace) -> None:
-    if not args.skip_camera:
-        print("Adding camera reference", flush=True)
-        add_camera_reference(stage_path)
+def resolve_collider_stage_path(stage_path: Path, physics_stage_path: Path | None, args: argparse.Namespace) -> Path:
+    if physics_stage_path is None:
+        try:
+            return existing_physics_stage_path(stage_path, args.physics_stage)
+        except FileNotFoundError:
+            return stage_path
+    return physics_stage_path
 
-    if not args.skip_physics:
-        if physics_stage_path is None:
-            physics_stage_path = existing_physics_stage_path(stage_path, args.physics_stage)
-        print(f"Updating physics stage: {physics_stage_path}", flush=True)
-        configure_physics_stage(physics_stage_path, args)
+
+def run_postprocess_actions(stage_path: Path, urdf_path: Path, physics_stage_path: Path | None, args: argparse.Namespace) -> None:
+    print("Adding camera reference", flush=True)
+    add_camera_reference(stage_path)
+
+    if args.remove_camera_rect_light:
+        print("Removing camera RectLight", flush=True)
+        remove_camera_rect_light(stage_path)
+    else:
+        print("Keeping camera RectLight", flush=True)
+
+    collider_stage_path = resolve_collider_stage_path(stage_path, physics_stage_path, args)
+    print(f"Updating collider stage: {collider_stage_path}", flush=True)
+    add_colliders_to_stage(
+        stage_path=collider_stage_path,
+        urdf_path=urdf_path,
+    )
+
+    if physics_stage_path is None:
+        physics_stage_path = existing_physics_stage_path(stage_path, args.physics_stage)
+    print(f"Updating physics stage: {physics_stage_path}", flush=True)
+    configure_physics_stage(physics_stage_path, args)
 
 
 def run_postprocess(args: argparse.Namespace) -> int:
@@ -596,19 +935,26 @@ def run_postprocess(args: argparse.Namespace) -> int:
         print(f"Stage file not found: {stage_path}", file=sys.stderr)
         return 1
 
-    physics_stage_path = None
-    if not args.skip_physics:
-        try:
-            physics_stage_path = existing_physics_stage_path(stage_path, args.physics_stage)
-        except FileNotFoundError as exc:
-            print(str(exc), file=sys.stderr)
-            return 1
-        if not physics_stage_path.exists():
-            print(f"Physics stage file not found: {physics_stage_path}", file=sys.stderr)
-            return 1
+    try:
+        urdf_path = existing_urdf_path(args.urdf)
+    except FileNotFoundError as exc:
+        print(str(exc), file=sys.stderr)
+        return 1
 
     try:
-        run_in_simulation_app(True, lambda: run_postprocess_actions(stage_path, physics_stage_path, args))
+        physics_stage_path = existing_physics_stage_path(stage_path, args.physics_stage)
+    except FileNotFoundError as exc:
+        print(str(exc), file=sys.stderr)
+        return 1
+    if not physics_stage_path.exists():
+        print(f"Physics stage file not found: {physics_stage_path}", file=sys.stderr)
+        return 1
+
+    try:
+        run_in_simulation_app(
+            True,
+            lambda: run_postprocess_actions(stage_path, urdf_path, physics_stage_path, args),
+        )
     except Exception as exc:
         print(f"Failed to update USD assets: {exc}", file=sys.stderr, flush=True)
         return 1
@@ -686,8 +1032,12 @@ def add_import_arguments(parser: argparse.ArgumentParser) -> None:
 
 
 def add_postprocess_option_arguments(parser: argparse.ArgumentParser) -> None:
-    parser.add_argument("--skip-camera", action="store_true", help="Do not attach the online camera USD.")
-    parser.add_argument("--skip-physics", action="store_true", help="Do not update the physics layer.")
+    parser.add_argument(
+        "--remove-camera-rect-light",
+        action=argparse.BooleanOptionalAction,
+        default=DEFAULT_REMOVE_CAMERA_RECT_LIGHT,
+        help="Deactivate the attached camera RectLight during postprocess. Use --no-remove-camera-rect-light to keep it.",
+    )
     parser.add_argument(
         "--static-friction",
         type=float,
@@ -745,6 +1095,11 @@ def add_postprocess_option_arguments(parser: argparse.ArgumentParser) -> None:
 def add_postprocess_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("stage", nargs="?", default=None, help="Top-level robot USD stage path.")
     parser.add_argument(
+        "--urdf",
+        default=None,
+        help="URDF file used to determine which links are expected to have collision geometry.",
+    )
+    parser.add_argument(
         "--physics-stage",
         default=None,
         help="Optional explicit physics-layer USD path.",
@@ -754,7 +1109,10 @@ def add_postprocess_arguments(parser: argparse.ArgumentParser) -> None:
 
 def build_postprocess_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
-        description="Attach the online camera USD and update the generated physics layer."
+        description=(
+            "Attach the online camera USD, remove the camera RectLight, always sync colliders, "
+            "and update the generated physics layer."
+        )
     )
     add_postprocess_arguments(parser)
     return parser
@@ -769,7 +1127,9 @@ def build_root_parser() -> argparse.ArgumentParser:
     import_parser = subparsers.add_parser("import", help="Import URDF and generate the robot USD.")
     add_import_arguments(import_parser)
 
-    postprocess_parser = subparsers.add_parser("postprocess", help="Attach camera and update physics settings.")
+    postprocess_parser = subparsers.add_parser(
+        "postprocess", help="Attach camera, remove the RectLight, and update physics settings."
+    )
     add_postprocess_arguments(postprocess_parser)
     return parser
 

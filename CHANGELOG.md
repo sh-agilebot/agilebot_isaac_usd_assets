@@ -113,6 +113,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.0.8] - 2026-03-30
+
+### Added
+- Added collider sync functionality to `convert_urdf_to_usd.py` - automatically adds collision geometry to robot links
+- Added Miniforge environment activation instructions to README
+
+### Changed
+- Refactored `convert_urdf_to_usd.py` - merged `remove_camera_rect_light.py` functionality directly into postprocess step
+- Removed standalone `remove_camera_rect_light.py` script
+- Postprocess now always runs: camera attachment + RectLight removal + collider sync + physics update (no more `--skip-camera` or `--skip-physics` options)
+- Updated `gbt-c5a_wrist_camera_gripper.urdf` parameters
+
+### Documentation
+- Updated README.md and README.zh-CN.md for gbt-c5a_wrist_camera_gripper with new workflow and collider sync instructions
+
+---
+
 ## [Unreleased]
 
 ### Planned

@@ -12,8 +12,7 @@
 - `meshes/visual/`：URDF 使用的可视化网格
 - `meshes/collision/`：URDF 使用的碰撞网格
 - `scripts/setup_robotiq_meshes.sh`：把所需 Robotiq STL 安装到本仓库
-- `scripts/convert_urdf_to_usd.py`：负责 URDF 导入、相机挂载和 physics layer 更新
-- `scripts/remove_camera_rect_light.py`：禁用挂载后的 Orbbec Gemini2 相机下的 `RectLight`
+- `scripts/convert_urdf_to_usd.py`：负责 URDF 导入、相机挂载、删除相机 `RectLight`、碰撞体补齐和 physics layer 更新
 - `urdf/gbt-c5a_wrist_camera_gripper/`：导入后生成的 USD 输出目录
 
 ## 前置条件
@@ -25,8 +24,15 @@
 
 - 本仓库不分发 Robotiq STL 资源。
 - `scripts/convert_urdf_to_usd.py` 不是普通 Python 脚本，它依赖 `isaacsim`、`isaaclab`、`omni.kit.commands`、`pxr` 等 Isaac 运行时模块。
-- `scripts/remove_camera_rect_light.py` 也需要在 Isaac Sim、Isaac Lab 或其他启用了 `pxr` 的 Python 环境中运行。
-- 相机后处理默认通过远程资产 URL 挂载 Orbbec Gemini2 相机。如果当前环境无法访问该远程资源，请使用 `--skip-camera`。
+- 相机后处理默认通过远程资产 URL 挂载 Orbbec Gemini2 相机。默认流程要求当前环境能够访问该远程资源。
+
+如果你是通过 Miniforge 管理 Isaac Lab 环境，建议先激活环境再执行下面所有命令：
+
+```bash
+source ~/miniforge3/bin/activate isaaclab
+```
+
+如果你的 Miniforge 安装路径不是 `~/miniforge3`，请改成你自己的实际路径。
 
 ## 快速开始
 
@@ -68,8 +74,8 @@ python scripts/convert_urdf_to_usd.py \
 - 以 headless 模式运行
 - 保持 `fix_base=true`
 - 保持 `merge_fixed_joints=false`
-- 导入完成后自动挂载相机，并更新 physics layer
-- 如果还需要去掉相机自带灯光，请在导入后运行 `python scripts/remove_camera_rect_light.py`
+- 导入完成后自动挂载相机、补齐碰撞体，并更新 physics layer
+- 会在后处理阶段自动去掉相机自带灯光
 
 ```bash
 python scripts/convert_urdf_to_usd.py
@@ -82,8 +88,8 @@ python scripts/convert_urdf_to_usd.py
 - 以 headless 模式运行
 - 保持 `fix_base=true`
 - 保持 `merge_fixed_joints=false`
-- 在导入完成后自动执行后处理，包括挂载相机，以及更新 physics layer
-- 不会自动去掉相机 `RectLight`，需要额外运行 `scripts/remove_camera_rect_light.py`
+- 在导入完成后自动执行后处理，包括挂载相机、补齐碰撞体，以及更新 physics layer
+- 会在后处理阶段自动去掉相机 `RectLight`
 
 ## 脚本工作流
 
@@ -95,12 +101,6 @@ python scripts/convert_urdf_to_usd.py \
   urdf/gbt-c5a_wrist_camera_gripper/gbt-c5a_wrist_camera_gripper.usd
 ```
 
-只做导入，不执行相机或 physics 后处理：
-
-```bash
-python scripts/convert_urdf_to_usd.py --skip-camera --skip-physics
-```
-
 对已有 USD 单独执行后处理：
 
 ```bash
@@ -108,19 +108,22 @@ python scripts/convert_urdf_to_usd.py postprocess \
   urdf/gbt-c5a_wrist_camera_gripper/gbt-c5a_wrist_camera_gripper.usd
 ```
 
-去掉挂载后的 Orbbec 相机下的 `RectLight`：
+后处理会固定执行相机挂载、删除相机 `RectLight`、碰撞体补齐，以及附近 physics layer 更新。
+
+不给 URDF 重新导入，单独给已有 USD 补碰撞体：
 
 ```bash
-python scripts/remove_camera_rect_light.py \
+python scripts/convert_urdf_to_usd.py postprocess \
   urdf/gbt-c5a_wrist_camera_gripper/gbt-c5a_wrist_camera_gripper.usd
 ```
+
+碰撞体编辑会自动切到附近的 `*_physics.usd` layer，并优先在 `/colliders` 下查找碰撞几何体。碰撞体补齐始终开启，并固定使用脚本内建默认值。
 
 帮助命令：
 
 ```bash
 python scripts/convert_urdf_to_usd.py --help
 python scripts/convert_urdf_to_usd.py postprocess --help
-python scripts/remove_camera_rect_light.py --help
 ```
 
 ## 关键参数
@@ -139,11 +142,13 @@ python scripts/remove_camera_rect_light.py --help
 
 常用后处理参数：
 
-- `--skip-camera`：跳过相机挂载
-- `--skip-physics`：跳过 physics layer 更新
+- `--urdf <path>`：在补 collider 时显式指定 URDF 文件
 - `--physics-stage <path>`：显式指定 physics layer
+- `--no-remove-camera-rect-light`：保留相机 `RectLight`，不在后处理阶段自动禁用
 - `--skip-finger-friction`：跳过手指摩擦材质创建与绑定
 - `--skip-articulation-config`：跳过 articulation 求解器参数更新
+
+相机挂载、`RectLight` 删除、碰撞体补齐和 physics layer 更新都固定使用脚本内建工作流默认值。
 
 脚本默认值：
 
@@ -174,20 +179,22 @@ python scripts/remove_camera_rect_light.py --help
 最少建议完成以下检查：
 
 - 运行 `python3 -m py_compile scripts/convert_urdf_to_usd.py`
-- 运行 `python3 -m py_compile scripts/remove_camera_rect_light.py`
+- 运行 `python3 scripts/convert_urdf_to_usd.py --help`
+- 运行 `python3 scripts/convert_urdf_to_usd.py postprocess --help`
 - 确认顶层 USD 已生成
 - 确认 physics layer 文件存在
 - 在 Isaac Sim 中打开生成的 USD，确认相机视图可用
 - 确认 `Stream_rgb` 中能看到夹爪
-- 如果执行了 `scripts/remove_camera_rect_light.py`，确认 stage 中的 `RectLight` 已被禁用或不再可见
+- 如果 `RectLight` 仍然意外可见，可以重新执行 `scripts/convert_urdf_to_usd.py postprocess`，并确认没有启用 `--no-remove-camera-rect-light`
 
 ## 排障说明
 
 - 如果网格安装脚本报错，先检查 6 个 STL 文件名是否完全匹配。
 - 如果转换脚本一开始就失败，通常是因为没有在 Isaac Sim 或 Isaac Lab 的 Python 环境中运行。
-- 如果相机挂载失败，先检查当前 Isaac Sim 环境是否能访问远程 Orbbec Gemini2 资产；如果不行，请改用 `--skip-camera`。
-- 如果导入后仍然能看到相机灯光，请运行 `python scripts/remove_camera_rect_light.py`。如果你的 stage 层级路径不同，可以再配合 `--prim-path <path>` 使用。
+- 如果相机挂载失败，先检查当前 Isaac Sim 环境是否能访问远程 Orbbec Gemini2 资产。
+- 如果导入后仍然能看到相机灯光，请重新运行 `python scripts/convert_urdf_to_usd.py postprocess`，并确认没有启用 `--no-remove-camera-rect-light`。
 - 如果后处理阶段找不到 physics layer，请通过 `--physics-stage <path>` 显式传入。
+- 如果补碰撞体找不到机器人 link，可以优先重跑 `scripts/convert_urdf_to_usd.py postprocess`，再检查生成出来的 stage 层级。内建补齐逻辑会优先使用附近的 physics layer 和 `/colliders` 路径。
 - 不要为该机器人启用 fixed joint merge。保持 `merge_fixed_joints=false` 才能保留预期的相机和夹爪层级。
 
 ## 已知限制

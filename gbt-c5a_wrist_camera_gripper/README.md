@@ -12,8 +12,7 @@ The documented workflow in this repository is script-only. GUI import steps are 
 - `meshes/visual/`: visual meshes used by the URDF
 - `meshes/collision/`: collision meshes used by the URDF
 - `scripts/setup_robotiq_meshes.sh`: installs the required Robotiq STL files into this repository
-- `scripts/convert_urdf_to_usd.py`: imports the URDF, attaches the camera USD, and updates the physics layer
-- `scripts/remove_camera_rect_light.py`: deactivates the `RectLight` prim under the attached Orbbec Gemini2 camera
+- `scripts/convert_urdf_to_usd.py`: imports the URDF, attaches the camera USD, removes the camera `RectLight`, adds collider APIs, and updates the physics layer
 - `urdf/gbt-c5a_wrist_camera_gripper/`: generated USD outputs after import
 
 ## Prerequisites
@@ -25,8 +24,15 @@ Important notes:
 
 - This repository does not redistribute Robotiq STL assets.
 - `scripts/convert_urdf_to_usd.py` is not a plain Python utility. It depends on Isaac runtime modules such as `isaacsim`, `isaaclab`, `omni.kit.commands`, and `pxr`.
-- `scripts/remove_camera_rect_light.py` must also run inside an Isaac Sim, Isaac Lab, or other `pxr`-enabled Python environment.
-- The camera postprocess step adds the Orbbec Gemini2 USD by remote asset URL. If that remote asset is unavailable in your environment, run the workflow with `--skip-camera`.
+- The camera postprocess step adds the Orbbec Gemini2 USD by remote asset URL. Your environment must be able to access that asset for the default workflow to succeed.
+
+If you manage Isaac Lab with Miniforge, activate that environment before running any commands below:
+
+```bash
+source ~/miniforge3/bin/activate isaaclab
+```
+
+If your Miniforge installation lives somewhere else, replace `~/miniforge3` with the actual path.
 
 ## Quick Start
 
@@ -68,8 +74,8 @@ This recommended command:
 - runs headless
 - keeps `fix_base=true`
 - keeps `merge_fixed_joints=false`
-- automatically attaches the camera and updates the physics layer
-- if you want to hide the camera light, run `python scripts/remove_camera_rect_light.py` after import
+- automatically attaches the camera, adds colliders, and updates the physics layer
+- removes the camera light automatically during postprocess
 
 ```bash
 python scripts/convert_urdf_to_usd.py
@@ -82,8 +88,8 @@ By default, this command:
 - runs headless
 - keeps `fix_base=true`
 - keeps `merge_fixed_joints=false`
-- automatically runs postprocess to attach the camera and update the physics layer
-- does not remove the camera `RectLight` unless you run `scripts/remove_camera_rect_light.py`
+- automatically runs postprocess to attach the camera, add colliders, and update the physics layer
+- removes the camera `RectLight` automatically during postprocess
 
 ## Script Workflow
 
@@ -95,12 +101,6 @@ python scripts/convert_urdf_to_usd.py \
   urdf/gbt-c5a_wrist_camera_gripper/gbt-c5a_wrist_camera_gripper.usd
 ```
 
-Import only, without camera or physics postprocess:
-
-```bash
-python scripts/convert_urdf_to_usd.py --skip-camera --skip-physics
-```
-
 Postprocess an existing USD stage:
 
 ```bash
@@ -108,19 +108,22 @@ python scripts/convert_urdf_to_usd.py postprocess \
   urdf/gbt-c5a_wrist_camera_gripper/gbt-c5a_wrist_camera_gripper.usd
 ```
 
-Remove the `RectLight` under the attached Orbbec camera:
+Postprocess always attaches the camera, removes the camera `RectLight`, adds colliders, and updates the nearby physics layer.
+
+Add colliders to an existing USD stage without re-running URDF import:
 
 ```bash
-python scripts/remove_camera_rect_light.py \
+python scripts/convert_urdf_to_usd.py postprocess \
   urdf/gbt-c5a_wrist_camera_gripper/gbt-c5a_wrist_camera_gripper.usd
 ```
+
+Collider edits always redirect to the nearby `*_physics.usd` layer when one exists and prefer `/colliders` as the search root. Collider sync is always enabled and uses the built-in defaults.
 
 Useful help commands:
 
 ```bash
 python scripts/convert_urdf_to_usd.py --help
 python scripts/convert_urdf_to_usd.py postprocess --help
-python scripts/remove_camera_rect_light.py --help
 ```
 
 ## Key Options
@@ -139,11 +142,13 @@ Common import options:
 
 Common postprocess options:
 
-- `--skip-camera`: skip camera attachment
-- `--skip-physics`: skip physics-layer updates
+- `--urdf <path>`: use an explicit URDF file when syncing colliders
 - `--physics-stage <path>`: use an explicit physics layer
+- `--no-remove-camera-rect-light`: keep the camera `RectLight` instead of deactivating it
 - `--skip-finger-friction`: skip finger material creation and binding
 - `--skip-articulation-config`: skip articulation solver tuning
+
+Camera attachment, `RectLight` removal, collider sync, and physics-layer updates always run with the built-in workflow defaults.
 
 Default script values:
 
@@ -174,20 +179,22 @@ After a successful import, the generated files usually include:
 Minimum validation after changes:
 
 - run `python3 -m py_compile scripts/convert_urdf_to_usd.py`
-- run `python3 -m py_compile scripts/remove_camera_rect_light.py`
+- run `python3 scripts/convert_urdf_to_usd.py --help`
+- run `python3 scripts/convert_urdf_to_usd.py postprocess --help`
 - confirm the top-level USD was generated
 - confirm the physics layer exists
 - open the USD in Isaac Sim and check that the camera view is available
 - confirm the gripper is visible in `Stream_rgb`
-- if `scripts/remove_camera_rect_light.py` was used, confirm the `RectLight` is inactive or no longer visible in the stage
+- if the camera `RectLight` still appears unexpectedly, rerun `scripts/convert_urdf_to_usd.py postprocess` with `--no-remove-camera-rect-light` omitted and confirm the light prim is inactive
 
 ## Troubleshooting
 
 - If the mesh setup script fails, verify that all 6 required STL files exist with the exact expected filenames.
 - If the conversion script fails immediately, make sure you are running it inside an Isaac Sim or Isaac Lab Python environment.
-- If camera attachment fails, verify that your Isaac Sim environment can access the remote Orbbec Gemini2 asset. If not, rerun with `--skip-camera`.
-- If the camera light is still visible after import, run `python scripts/remove_camera_rect_light.py`. If your stage uses a different prim hierarchy, rerun with `--prim-path <path>`.
+- If camera attachment fails, verify that your Isaac Sim environment can access the remote Orbbec Gemini2 asset.
+- If the camera light is still visible after import, rerun `python scripts/convert_urdf_to_usd.py postprocess` and make sure `--no-remove-camera-rect-light` is not set.
 - If the script cannot find the physics layer during postprocess, rerun with `--physics-stage <path>`.
+- If collider sync cannot find your robot links, rerun `scripts/convert_urdf_to_usd.py postprocess` and inspect the generated stage hierarchy. The built-in sync always prefers the nearby physics layer and `/colliders` when present.
 - Do not enable fixed-joint merging for this robot. Keeping `merge_fixed_joints=false` preserves the expected camera and gripper hierarchy.
 
 ## Known Limitations
