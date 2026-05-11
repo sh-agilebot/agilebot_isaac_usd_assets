@@ -37,7 +37,7 @@ If your Miniforge installation lives somewhere else, replace `~/miniforge3` with
 ## Quick Start
 
 1. Install the required Robotiq meshes:
-
+>https://github.com/ros-industrial-attic/robotiq/tree/kinetic-devel/robotiq_2f_140_gripper_visualization
 ```bash
 bash scripts/setup_robotiq_meshes.sh /path/to/robotiq_stl_dir
 ```
