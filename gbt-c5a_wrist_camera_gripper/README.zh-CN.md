@@ -37,7 +37,7 @@ source ~/miniforge3/bin/activate isaaclab
 ## 快速开始
 
 1. 安装所需 Robotiq 网格：
-
+>https://github.com/ros-industrial-attic/robotiq/tree/kinetic-devel/robotiq_2f_140_gripper_visualization
 ```bash
 bash scripts/setup_robotiq_meshes.sh /path/to/robotiq_stl_dir
 ```
